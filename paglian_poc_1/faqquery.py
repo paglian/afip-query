@@ -16,7 +16,7 @@ from fastnn import FastNeuralNet
 
 db_path = './db/'
 valid_chars = string.ascii_letters + ' '
-ignore_lemmas = ['ser', 'estar', 'parecer']
+ignore_lemmas = ['ser', 'estar', 'parecer', 'poder']
 
 
 class FaqQuery:
@@ -64,7 +64,7 @@ class FaqQuery:
         #print "sanitized %s -> %s" % (word, wsz)
         return wsz
 
-    def get_word_ids(self, s):
+    def parse_sentence(self, s):
         # TODO refactor!
         #
         # Tokenize and lemmatize using Freeling:
@@ -77,7 +77,7 @@ class FaqQuery:
             print "Error: fl command not found! Aborting execution."
             raise
 
-        # print output
+        print output
 
         lemmas = json.loads(output)
 
@@ -119,7 +119,7 @@ class FaqQuery:
 
             starttime = time.time()
             expurl = self.crawler.geturlid(k)
-            wordids = self.get_word_ids(v)
+            wordids = self.parse_sentence(v)
 
             ############################## CHECK ##############################
             # Train with bigrams and 3-grams ? e.g.  min = 2, max = 3
@@ -127,11 +127,11 @@ class FaqQuery:
             min_ngram_len = 1000
             max_ngram_len = 1000
             # Train passing *all* urlids? e.g:
-            # urlsubset = self.urlids
+            urlsubset = self.urlids
             # Or just a random subset? e.g:
-            urlsubset = [expurl]
-            for i in range(10):
-                urlsubset.append(choice(self.urlids))
+            #urlsubset = [expurl]
+            #for i in range(10):
+            #    urlsubset.append(choice(self.urlids))
             ###################################################################
 
             for ngram_len in range(min_ngram_len, max_ngram_len + 1):
@@ -143,10 +143,11 @@ class FaqQuery:
             c += 1
 
     def query(self, q, N=10):
-        """Get result for query q using the currently trained database"""
+        """Get result for query q using the currently trained database and
+        return N best answers"""
 
         urlids = self.urlids
-        wordids = self.get_word_ids(q)
+        wordids = self.parse_sentence(q)
         result = self.nn.getresult(wordids, urlids)
 
         # result is hard to read. So we create user-friendly result with

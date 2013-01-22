@@ -67,7 +67,7 @@ class FastNeuralNet:
             #% (table, fromid, toid)).fetchone()
         #if res is None:
             #if layer == 0:
-                #return -0.2  # TUNE !!! Old: -0.2
+                #return -0.2
             #if layer == 1:
                 #return 0
         #return res[0]
@@ -192,8 +192,6 @@ class FastNeuralNet:
                 s = s + self.ah[j] * self.wo[j][k]
             self.ao[k] = tanh(s)
 
-        return self.ao[:]
-
     def getresult(self, wordids, urlids):
         self.setupnetwork(wordids, urlids)
         return self.feedforward()
@@ -232,6 +230,7 @@ class FastNeuralNet:
     def trainquery(self, wordids, urlids, selectedurl):
         # generate a hidden node if necessary
         self.generatehiddennode(wordids, urlids)
+
         self.setupnetwork(wordids, urlids)
         self.feedforward()
         targets = [0.0] * len(urlids)
