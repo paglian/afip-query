@@ -8,10 +8,11 @@ import string
 import subprocess
 import json
 import os
-
+from random import choice
 from faqfile import FaqFile
 from searchengine import Crawler
 from fastnn import FastNeuralNet
+
 
 db_path = './db/'
 valid_chars = string.ascii_letters + ' '
@@ -96,40 +97,50 @@ class FaqQuery:
         # Finally get IDs
         return [self.crawler.getwordid(word) for word in words]
 
-    def train(self, iters=30):
+    def train(self, iters=20):
         """Train neural network with the given FAQ file. Must be a valid JSON
         file"""
-
-        total = len(self.faq.data)
 
         try:
             # train with iters iterations
             for i in range(iters):
                 print "\n\n*********** ITERATION %d ***********\n\n" % (i + 1)
-
-                # for each question in FAQ
-                c = 1
-                for k, v in self.faq.data.iteritems():
-                    print "%d/%d Training question %s: %s" % (c, total, k, v)
-                    starttime = time.time()
-                    expurl = self.crawler.geturlid(k)
-                    wordids = self.get_word_ids(v)
-
-                    ########### CHECK ##########
-                    # Train with bigrams and 3-grams ?
-                    # Train passing *all* urlids ?
-                    min_ngram_len = 2
-                    max_ngram_len = 3
-                    for ngram_len in range(min_ngram_len - 1, max_ngram_len):
-                        for i in range(len(wordids) - ngram_len):
-                            rwordids = wordids[i:i + ngram_len + 1]
-                            self.nn.trainquery(rwordids, self.urlids, expurl)
-                    ############################
-
-                    print "Done in %f secs\n" % ((time.time() - starttime))
-                    c += 1
+                self.__train()
         except KeyboardInterrupt:
             print "Aborted!"
+
+    def __train(self):
+        c = 1
+        total = len(self.faq.data)
+
+        # for each question in FAQ
+        for k, v in self.faq.data.iteritems():
+            print "%d/%d Training question %s: %s" % (c, total, k, v)
+
+            starttime = time.time()
+            expurl = self.crawler.geturlid(k)
+            wordids = self.get_word_ids(v)
+
+            ############################## CHECK ##############################
+            # Train with bigrams and 3-grams ? e.g.  min = 2, max = 3
+            # Or whole query? e.g. min = max = 1000
+            min_ngram_len = 1000
+            max_ngram_len = 1000
+            # Train passing *all* urlids? e.g:
+            # urlsubset = self.urlids
+            # Or just a random subset? e.g:
+            urlsubset = [expurl]
+            for i in range(10):
+                urlsubset.append(choice(self.urlids))
+            ###################################################################
+
+            for ngram_len in range(min_ngram_len, max_ngram_len + 1):
+                for i in range(max(1, len(wordids) - ngram_len)):
+                    self.nn.trainquery(wordids[i:i + ngram_len], urlsubset,
+                                       expurl)
+
+            print "Done in %f secs\n" % ((time.time() - starttime))
+            c += 1
 
     def query(self, q, N=10):
         """Get result for query q using the currently trained database"""
