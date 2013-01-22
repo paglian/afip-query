@@ -8,7 +8,7 @@ import string
 import subprocess
 import json
 import os
-from random import choice
+#from random import choice
 from faqfile import FaqFile
 from searchengine import Crawler
 from fastnn import FastNeuralNet
@@ -25,6 +25,7 @@ class FaqQuery:
     def __init__(self, faq_file):
         self.make_dirs()
         base_name = os.path.basename(faq_file)
+
         self.nn = FastNeuralNet(db_path + base_name + "_nn.db")
 
         # Not crawling data, from Crawler we are just using a couple of methods
@@ -101,8 +102,12 @@ class FaqQuery:
         """Train neural network with the given FAQ file. Must be a valid JSON
         file"""
 
+        # for each question in FAQ, build a cache with the parsed data
+        self.parsed_data = {}
+        for k, v in self.faq.data.iteritems():
+            self.parsed_data[k] = self.parse_sentence(v)
+
         try:
-            # train with iters iterations
             for i in range(iters):
                 print "\n\n*********** ITERATION %d ***********\n\n" % (i + 1)
                 self.__train()
@@ -113,13 +118,12 @@ class FaqQuery:
         c = 1
         total = len(self.faq.data)
 
-        # for each question in FAQ
         for k, v in self.faq.data.iteritems():
             print "%d/%d Training question %s: %s" % (c, total, k, v)
 
             starttime = time.time()
             expurl = self.crawler.geturlid(k)
-            wordids = self.parse_sentence(v)
+            wordids = self.parsed_data[k]
 
             ############################## CHECK ##############################
             # Train with bigrams and 3-grams ? e.g.  min = 2, max = 3
