@@ -194,7 +194,8 @@ class FastNeuralNet:
 
     def getresult(self, wordids, urlids):
         self.setupnetwork(wordids, urlids)
-        return self.feedforward()
+        self.feedforward()
+        return self.ao[:]
 
     def backPropagate(self, targets, N=0.5):
         # calculate errors for output
