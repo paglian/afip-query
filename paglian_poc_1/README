@@ -1,0 +1,38 @@
+WHAT'S THIS?
+------------
+
+This is a proof of concept (POC) of a artificial neural network (ANN)
+The implementation is based on the book 'Programing Collective Intelligence',
+Chapter "Learning from Clicks", page 74.
+It also contains some tweaks and improvements such as word lemmatization.
+
+
+REQUIREMENTS
+------------
+
+ - Python 2.7
+ - Qt >= 4.8 (To run the Freeling server)
+
+
+RUNNING
+-------
+
+1) In a new console, start Freeling server:
+
+   $ ./fl --server
+
+2) Train the ANN:
+
+   $ python faqquery.py <FAQ_FILE> --train
+
+   Choose <FAQ_FILE> from ./faqs/
+
+3) Finally, query the ANN with:
+
+   $ python faqquery.py <FAQ_FILE>
+
+   Alternativerly, to do a single query:
+
+   $ python faqquery.py <FAQ_FILE> "<QUESTION>"
+
+
