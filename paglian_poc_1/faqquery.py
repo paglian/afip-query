@@ -87,10 +87,10 @@ class FaqQuery:
         for k, v in lemmas.iteritems():
             tag = v['tag']
             if tag.startswith('V') or tag.startswith('N') or tag.startswith('PT'):
-                    szlemma = self.sanitize(v['lemma'])
-                    if len(szlemma) == 0 or szlemma in ignore_lemmas:
-                        continue
-                    words.append(szlemma)
+                szlemma = self.sanitize(v['lemma'])
+                if len(szlemma) == 0 or szlemma in ignore_lemmas:
+                    continue
+                words.append(szlemma)
 
         print "Keywords: ", words
 
