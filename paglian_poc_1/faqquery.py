@@ -102,10 +102,13 @@ class FaqQuery:
         """Train neural network with the given FAQ file. Must be a valid JSON
         file"""
 
-        # for each question in FAQ, build a cache with the parsed data
+        # for each question in FAQ, build a cache with the parsed data and
+        # and the url id
         self.parsed_data = {}
+        self.url_id = {}
         for k, v in self.faq.data.iteritems():
             self.parsed_data[k] = self.parse_sentence(v)
+            self.url_id[k] = self.crawler.geturlid(k)
 
         try:
             for i in range(iters):
@@ -122,7 +125,7 @@ class FaqQuery:
             print "%d/%d Training question %s: %s" % (c, total, k, v)
 
             starttime = time.time()
-            expurl = self.crawler.geturlid(k)
+            exp_url_id = self.url_id[k]
             wordids = self.parsed_data[k]
 
             ############################## CHECK ##############################
@@ -141,7 +144,7 @@ class FaqQuery:
             for ngram_len in range(min_ngram_len, max_ngram_len + 1):
                 for i in range(max(1, len(wordids) - ngram_len)):
                     self.nn.trainquery(wordids[i:i + ngram_len], urlsubset,
-                                       expurl)
+                                       exp_url_id)
 
             print "Done in %f secs\n" % ((time.time() - starttime))
             c += 1
