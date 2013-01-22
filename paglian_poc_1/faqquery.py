@@ -84,10 +84,10 @@ class FaqQuery:
         words = []
 
         # Only use verbs, nouns and PTs
-        for k, v in lemmas.iteritems():
-            tag = v['tag']
+        for l in lemmas:
+            tag = l['tag']
             if tag.startswith('V') or tag.startswith('N') or tag.startswith('PT'):
-                szlemma = self.sanitize(v['lemma'])
+                szlemma = self.sanitize(l['lemma'])
                 if len(szlemma) == 0 or szlemma in ignore_lemmas:
                     continue
                 words.append(szlemma)
