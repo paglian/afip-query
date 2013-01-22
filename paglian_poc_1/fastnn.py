@@ -126,12 +126,17 @@ class FastNeuralNet:
     def getallhiddenids(self, wordids, urlids):
         l1 = {}
 
-        #for wh in self.strength[0].values():
-            #for h in wh.keys():
-                #l1[h] = 1
-        for hu in self.strength[1].values():
-            for h in hu.keys():
+        for wordid in wordids:
+            if wordid not in self.strength[0]:
+                continue
+            for h in self.strength[0][wordid].iterkeys():
                 l1[h] = 1
+
+        for h, urls in self.strength[1].iteritems():
+            for u in urls.keys():
+                if u in urlids:
+                    l1[h] = 1
+                    break
 
         return list(l1.keys())
 
