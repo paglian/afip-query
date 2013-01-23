@@ -5,13 +5,12 @@ import time
 import unicodedata
 import string
 #import re
-import subprocess
-import json
 import os
 #from random import choice
 from faqfile import FaqFile
 from searchengine import Crawler
 from fastnn import FastNeuralNet
+from lemmatizer import Lemmatizer
 
 
 db_path = './db/'
@@ -23,7 +22,10 @@ class FaqQuery:
     """Interface to train an later query FAQ file using a neural network"""
 
     def __init__(self, faq_file):
+        self.verbose_level = 1
+
         self.make_dirs()
+
         base_name = os.path.basename(faq_file)
 
         self.nn = FastNeuralNet(db_path + base_name + "_nn.db")
@@ -59,70 +61,66 @@ class FaqQuery:
             self.urlids.append(urlid)
             self.faqdict[urlid] = [k, v]
 
-    def sanitize(self, s):
+    def normalize(self, s):
         wsz = ''.join(x for x in unicodedata.normalize('NFKD', unicode(s))
                         if x in valid_chars).lower()
         #print "sanitized %s -> %s" % (word, wsz)
         return wsz
 
     def parse_sentence(self, s):
-        # TODO refactor!
-        #
-        # Tokenize and lemmatize using Freeling:
-        try:
-            output = subprocess.check_output(['./fl', s])
-        except subprocess.CalledProcessError:
-            print "Error: fl command has failed!"
-            raise
-        except OSError:
-            print "Error: fl command not found! Aborting execution."
-            raise
+        keywords = []
 
-        print output
+        l = Lemmatizer()
 
-        lemmas = json.loads(output)
+        lemmas = l.lemmatize(s)
 
-        words = []
+        # Only keep verbs, nouns and PTs
+        lemmas = l.filter(lemmas, ['V', 'N', 'PT'])
 
-        # Only use verbs, nouns and PTs
+        # Normalize lemmas
         for l in lemmas:
-            tag = l['tag']
-            if tag.startswith('V') or tag.startswith('N') or tag.startswith('PT'):
-                szlemma = self.sanitize(l['lemma'])
-                if len(szlemma) == 0 or szlemma in ignore_lemmas:
-                    continue
-                words.append(szlemma)
+            norm_lemma = self.normalize(l['lemma'])
+            if len(norm_lemma) == 0 or norm_lemma in ignore_lemmas:
+                continue
+            keywords.append(norm_lemma)
 
-        print "Keywords: ", words
+        self.vprint("Keywords: ", keywords)
 
-        # Finally get IDs
-        return [self.crawler.getwordid(word) for word in words]
+        return [self.crawler.getwordid(word) for word in keywords]
 
-    def train(self, iters=20):
+    def train(self, iters=100, print_tests=False):
         """Train neural network with the given FAQ file. Must be a valid JSON
         file"""
 
-        # for each question in FAQ, build a cache with the parsed data and
-        # and the url id
+        self.__make_train_cache()
+
+        try:
+            for i in range(iters):
+                self.vprint("\n\n******** ITERATION %d ********\n\n" % (i + 1))
+
+                self.__train()
+
+                if print_tests:
+                    self.__print_test_results(i)
+
+        except KeyboardInterrupt:
+            print "Aborted!"
+
+    def __make_train_cache(self):
+        """for each question in FAQ, build a cache with the parsed data and
+        and the url id"""
         self.parsed_data = {}
         self.url_id = {}
         for k, v in self.faq.data.iteritems():
             self.parsed_data[k] = self.parse_sentence(v)
             self.url_id[k] = self.crawler.geturlid(k)
 
-        try:
-            for i in range(iters):
-                print "\n\n*********** ITERATION %d ***********\n\n" % (i + 1)
-                self.__train()
-        except KeyboardInterrupt:
-            print "Aborted!"
-
     def __train(self):
         c = 1
         total = len(self.faq.data)
 
         for k, v in self.faq.data.iteritems():
-            print "%d/%d Training question %s: %s" % (c, total, k, v)
+            self.vprint("%d/%d Training question %s: %s" % (c, total, k, v))
 
             starttime = time.time()
             exp_url_id = self.url_id[k]
@@ -146,8 +144,32 @@ class FaqQuery:
                     self.nn.trainquery(wordids[i:i + ngram_len], urlsubset,
                                        exp_url_id)
 
-            print "Done in %f secs\n" % ((time.time() - starttime))
+            self.vprint("Done in %f secs\n" % ((time.time() - starttime)))
             c += 1
+
+    def __print_test_results(self, iteration):
+        """Print some test results"""
+        #qids = ["467563"]
+        qids = ["138165"]
+        queries = ['bancos puedo realizar el pago',
+            'bancos pago',
+            'pago',
+            'recategorizarme?',
+            'tomar para recategorizarme?',
+            'que debo tomar para recategorizarme?']
+        for qid in qids:
+            scores = [0.0] * len(queries)
+
+            for q in queries:
+                test_result = self.query(q, 300)
+                for r in test_result:
+                    if r[1] != qid:
+                        continue
+                    else:
+                        scores[queries.index(q)] = r[0]
+                        break
+
+            print iteration, qid, "Scores: ", scores
 
     def query(self, q, N=10):
         """Get result for query q using the currently trained database and
@@ -169,12 +191,21 @@ class FaqQuery:
 
         return uf_result[0:N]
 
+    def vprint(self, *args, **keys):
+        level = 1
+        if 'level' in keys:
+            level = keys['level']
+
+        if self.verbose_level >= level:
+            for arg in args:
+                print arg
+
 
 def main():
     def print_usage():
         print \
 """Usage:
-    afipquery <faq_file> --train         ### Train using the given file. e.g afipquery --train afip_mono_faq.json
+    afipquery <faq_file> --train         ### Train using the given file. e.g afipquery afip_mono_faq.json --train
     afipquery <faq_file>                 ### Interactive mode. e.g. afipquery afip_mono_faq.json
     afipquery <faq_file> <query_string>  ### Single query mode. e.g afipquery afip_mono_faq.json "Como me inscribo?"
 """
@@ -202,6 +233,12 @@ def main():
         fq.train()
         print "Training finished!"
 
+    def train_wtests_mode(faq_file):
+        fq = FaqQuery(faq_file)
+        fq.verbose_level = 0
+        fq.train(print_tests=True)
+        print "Training finished!"
+
     # Command line parsing -- TODO use getopt
     argc = len(sys.argv)
 
@@ -215,6 +252,8 @@ def main():
         elif argc == 3:
             if sys.argv[2] == '--train':
                 train_mode(faq_file)
+            elif sys.argv[2] == '--train-with-tests':
+                train_wtests_mode(faq_file)
             else:
                 single_query_mode(faq_file, sys.argv[2])
         else:
