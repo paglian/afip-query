@@ -7,6 +7,7 @@ import string
 #import re
 import os
 #from random import choice
+
 from faqfile import FaqFile
 from searchengine import Crawler
 from fastnn import FastNeuralNet
@@ -70,11 +71,9 @@ class FaqQuery:
     def parse_sentence(self, s):
         keywords = []
 
+        # Lemmatize sentence and only keep verbs, nouns and PTs
         l = Lemmatizer()
-
         lemmas = l.lemmatize(s)
-
-        # Only keep verbs, nouns and PTs
         lemmas = l.filter(lemmas, ['V', 'N', 'PT'])
 
         # Normalize lemmas
@@ -91,13 +90,11 @@ class FaqQuery:
     def train(self, iters=100, print_tests=False):
         """Train neural network with the given FAQ file. Must be a valid JSON
         file"""
-
         self.__make_train_cache()
 
         try:
             for i in range(iters):
                 self.vprint("\n\n******** ITERATION %d ********\n\n" % (i + 1))
-
                 self.__train()
 
                 if print_tests:
@@ -151,7 +148,7 @@ class FaqQuery:
         """Print some test results"""
         #qids = ["467563"]
         qids = ["138165"]
-        queries = ['bancos puedo realizar el pago',
+        queries = ['en que bancos puedo realizar el pago',
             'bancos pago',
             'pago',
             'recategorizarme?',
@@ -160,7 +157,6 @@ class FaqQuery:
 
         for qid in qids:
             scores = [0.0] * len(queries)
-
             for q in queries:
                 test_result = self.query(q, 300)
                 for r in test_result:
