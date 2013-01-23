@@ -197,7 +197,7 @@ class FastNeuralNet:
         self.feedforward()
         return self.ao[:]
 
-    def backPropagate(self, targets, N=0.5):
+    def backPropagate(self, targets, N=0.05):
         # calculate errors for output
         output_deltas = [0.0] * len(self.urlids)
         for k in range(len(self.urlids)):

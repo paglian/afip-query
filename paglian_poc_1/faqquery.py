@@ -239,6 +239,7 @@ def main():
 
     def train_mode(faq_file):
         fq = FaqQuery(faq_file)
+        print "Training..."
         fq.train()
         print "Training finished!"
 
@@ -250,6 +251,7 @@ def main():
     def train_and_test_mode(faq_file):
         fq = FaqQuery(faq_file)
         fq.verbose_level = 0
+        print "Training..."
         fq.train(print_tests=True)
         print "Training finished!"
 
