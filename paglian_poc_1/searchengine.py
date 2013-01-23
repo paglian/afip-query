@@ -20,6 +20,7 @@ class Crawler:
         self.createindextables()
 
     def __del__(self):
+        self.con.commit()
         self.con.close()
 
     def dbcommit(self):
