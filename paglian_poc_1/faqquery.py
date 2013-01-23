@@ -101,7 +101,7 @@ class FaqQuery:
                 self.__train()
 
                 if print_tests:
-                    self.__print_test_results(i)
+                    self.__print_test_results(i + 1, iters)
 
         except KeyboardInterrupt:
             print "Aborted!"
@@ -147,7 +147,7 @@ class FaqQuery:
             self.vprint("Done in %f secs\n" % ((time.time() - starttime)))
             c += 1
 
-    def __print_test_results(self, iteration):
+    def __print_test_results(self, iteration, total):
         """Print some test results"""
         #qids = ["467563"]
         qids = ["138165"]
@@ -157,6 +157,7 @@ class FaqQuery:
             'recategorizarme?',
             'tomar para recategorizarme?',
             'que debo tomar para recategorizarme?']
+
         for qid in qids:
             scores = [0.0] * len(queries)
 
@@ -170,6 +171,13 @@ class FaqQuery:
                         break
 
             print iteration, qid, "Scores: ", scores
+
+        if iteration == total:
+            for q in queries:
+                result = self.query(q, 300)
+                print "\nQuery:", q
+                for r in result[:10]:
+                    print r
 
     def query(self, q, N=10):
         """Get result for query q using the currently trained database and
@@ -191,6 +199,9 @@ class FaqQuery:
 
         return uf_result[0:N]
 
+    def test(self):
+        self.__print_test_results(1, 1)
+
     def vprint(self, *args, **keys):
         level = 1
         if 'level' in keys:
@@ -205,9 +216,11 @@ def main():
     def print_usage():
         print \
 """Usage:
-    afipquery <faq_file> --train         ### Train using the given file. e.g afipquery afip_mono_faq.json --train
-    afipquery <faq_file>                 ### Interactive mode. e.g. afipquery afip_mono_faq.json
-    afipquery <faq_file> <query_string>  ### Single query mode. e.g afipquery afip_mono_faq.json "Como me inscribo?"
+    faqquery.py <faq_file> --train          # Train using the given file. e.g afipquery afip_mono_faq.json --train
+    faqquery.py <faq_file> --test           # Print some test results. e.g afipquery afip_mono_faq.json --test
+    faqquery.py <faq_file> --test-and-train #
+    faqquery.py <faq_file>                  # Interactive query mode. e.g. afipquery afip_mono_faq.json
+    faqquery.py <faq_file> <query_string>   # Single query mode. e.g afipquery afip_mono_faq.json "Como me inscribo?"
 """
 
     def print_results(fq, query):
@@ -233,7 +246,12 @@ def main():
         fq.train()
         print "Training finished!"
 
-    def train_wtests_mode(faq_file):
+    def test_mode(faq_file):
+        fq = FaqQuery(faq_file)
+        fq.verbose_level = 0
+        fq.test()
+
+    def train_and_test_mode(faq_file):
         fq = FaqQuery(faq_file)
         fq.verbose_level = 0
         fq.train(print_tests=True)
@@ -252,8 +270,12 @@ def main():
         elif argc == 3:
             if sys.argv[2] == '--train':
                 train_mode(faq_file)
-            elif sys.argv[2] == '--train-with-tests':
-                train_wtests_mode(faq_file)
+            elif sys.argv[2] == '--test':
+                test_mode(faq_file)
+            elif sys.argv[2] == '--train-and-test':
+                train_and_test_mode(faq_file)
+            elif sys.argv[2].startswith('-'):
+                print_usage()
             else:
                 single_query_mode(faq_file, sys.argv[2])
         else:
