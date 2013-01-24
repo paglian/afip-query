@@ -59,7 +59,7 @@ def afip_query_form(request):
     t = template.Template(html_tmpl)
     c = template.Context({
         'title': 'Consulta Monotributo AFIP',
-        'afip_url' : '"http://www.afip.gob.ar/genericos/guiavirtual/consultas_detalle.aspx?id=',
+        'afip_url' : 'http://www.afip.gob.ar/genericos/guiavirtual/consultas_detalle.aspx?id=',
         'query': query,
         'results': results
         })
