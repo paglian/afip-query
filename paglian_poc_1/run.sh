@@ -14,6 +14,7 @@ sleep 2
 
 cd -
 
-echo " ==============="
-echo " === run.sh === If everything went OK, open your web browser at http://127.0.0.1:8000"
-echo " =============="
+echo ""
+echo " === run.sh ========================================================== "
+echo " If everything went OK, open your web browser at http://127.0.0.1:8000"
+echo " ====================================================================="

@@ -1,10 +1,15 @@
 
 To run the POC, just:
 
-$ ./run.sh
+ $ ./run.sh
 
 And open your web browser at the given url
 
+Requiremnts:
+
+ - Python 2.7
+ - Qt >= 4.8
+ - Django >= 1.4
 
 For more information see backend/README and frontend/README
 

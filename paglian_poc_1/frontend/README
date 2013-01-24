@@ -1,1 +1,6 @@
 This folder contains a very simple front-end that uses Django
+
+To start the web server:
+
+ $ python manage.py runserver
+

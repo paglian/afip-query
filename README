@@ -2,5 +2,8 @@ So far, this project only contains one proof of concept (POC) at
 
 ./paglian_poc_1
 
-For more information see ./paglian_poc_1/README
+The POC consists of a back-end that implements an artificial neural network
+and a very simple front-end running on top of Django
+
+To run the POC see ./paglian_poc_1/README
 
