@@ -98,7 +98,10 @@ class FaqQuery:
                 self.__train()
 
                 if print_tests:
-                    self.__print_test_results(i + 1, iters)
+                    self.__print_partial_test_results(i + 1, iters)
+
+            if print_tests:
+                self.__print_test_results()
 
         except KeyboardInterrupt:
             print "Aborted!"
@@ -144,8 +147,8 @@ class FaqQuery:
             self.vprint("Done in %f secs\n" % ((time.time() - starttime)))
             c += 1
 
-    def __print_test_results(self, iteration, total):
-        """Print some test results"""
+    def __print_partial_test_results(self, iteration, total):
+        """Print some partial test results"""
         #qids = ["467563"]
         qids = ["138165"]
         queries = ['en que bancos puedo realizar el pago',
@@ -168,12 +171,37 @@ class FaqQuery:
 
             print iteration, qid, "Scores: ", scores
 
-        if iteration == total:
-            for q in queries:
-                result = self.query(q, 300)
-                print "\nQuery:", q
-                for r in result[:10]:
-                    print r
+    def __print_test_results(self):
+        fails = 0
+        passes = 0
+        padding = 10
+
+        print "\n*Expected*".rjust(padding), "*Got*".rjust(padding)
+
+        for k, v in self.faq.data.iteritems():
+            result = self.query(v, 300)
+            best_result = result[0][1]
+
+            print k.rjust(padding), best_result.rjust(padding),
+            if k == best_result:
+                passes += 1
+                print "Ok"
+            else:
+                fails += 1
+                print "Failed!",
+
+                for i in range(len(result)):
+                    if result[i][1] == k:
+                        print "Exp response found at position %d" % (i + 1)
+                        break
+
+                print "       |           \---> ", result[0][2]
+                print "       \---------------> ", v
+
+        total = float(passes + fails)
+        print "\nSummary:"
+        print " * Passed: %d (%%%.2f)" % (passes, passes / total * 100)
+        print " * Failed: %d (%%%.2f)" % (fails, fails / total * 100)
 
     def query(self, q, N=10):
         """Get result for query q using the currently trained database and
@@ -196,7 +224,8 @@ class FaqQuery:
         return uf_result[0:N]
 
     def test(self):
-        self.__print_test_results(1, 1)
+        self.__make_train_cache()
+        self.__print_test_results()
 
     def vprint(self, *args, **keys):
         level = 1
