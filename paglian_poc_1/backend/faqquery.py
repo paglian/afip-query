@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import sys
 import time
 import unicodedata
 import string
@@ -71,17 +70,20 @@ class FaqQuery:
     def parse_sentence(self, s):
         keywords = []
 
-        # Lemmatize sentence and only keep verbs, nouns and PTs
+        # Lemmatize sentence and only keep verbs, nouns, dates and PTs
         l = Lemmatizer()
         lemmas = l.lemmatize(s)
-        lemmas = l.filter(lemmas, ['V', 'N', 'PT'])
+        lemmas = l.filter(lemmas, ['V', 'N', 'W', 'PT'])
 
         # Normalize lemmas
         for l in lemmas:
-            norm_lemma = self.normalize(l['lemma'])
-            if len(norm_lemma) == 0 or norm_lemma in ignore_lemmas:
-                continue
-            keywords.append(norm_lemma)
+            if l['tag'] == 'W':
+                norm_lemma = l['lemma']
+            else:
+                norm_lemma = self.normalize(l['lemma'])
+
+            if len(norm_lemma) > 0 and norm_lemma not in ignore_lemmas:
+                keywords.append(norm_lemma)
 
         self.vprint("Keywords: ", keywords)
 
@@ -93,15 +95,14 @@ class FaqQuery:
         self.__make_train_cache()
 
         try:
-            for i in range(iters):
-                self.vprint("\n\n******** ITERATION %d ********\n\n" % (i + 1))
+            for i in range(1, iters + 1):
+                self.vprint("\n\n******** ITERATION %d ********\n\n" % i)
                 self.__train()
 
                 if print_tests:
-                    self.__print_partial_test_results(i + 1, iters)
-
-            if print_tests:
-                self.__print_test_results()
+                    self.__print_partial_test_results(i, iters)
+                    if i % 10 == 0 or i == iters:
+                        self.__print_test_results()
 
         except KeyboardInterrupt:
             print "Aborted!"
@@ -238,6 +239,8 @@ class FaqQuery:
 
 
 def main():
+    import sys
+
     def print_usage():
         print \
 """Usage:
