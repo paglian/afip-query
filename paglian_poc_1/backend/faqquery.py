@@ -11,7 +11,7 @@ from faqfile import FaqFile
 from searchengine import Crawler
 from fastnn import FastNeuralNet
 from lemmatizer import Lemmatizer
-
+from spellchecker import SpellChecker
 
 db_path = os.path.dirname(os.path.abspath(__file__)) + '/db/'
 valid_chars = string.ascii_letters + ' '
@@ -35,6 +35,8 @@ class FaqQuery:
         self.crawler = Crawler(db_path + base_name + "_index.db")
 
         self.set_faq_file(faq_file)
+
+        self.sp = None
 
     def make_dirs(self):
         """Make directories needed to run the application"""
@@ -223,6 +225,22 @@ class FaqQuery:
         uf_result.sort(reverse=True)
 
         return uf_result[0:N]
+
+    def spell_check(self, q):
+        self.__init_spell_checker()
+
+        return self.sp.correct_sentence(q)
+
+    def __init_spell_checker(self):
+        if self.sp:
+            return
+
+        faq_corpus = ""
+        for v in self.faq.data.itervalues():
+            faq_corpus += v + " "
+
+        # TODO provide a bigger corpus!
+        self.sp = SpellChecker(faq_corpus)
 
     def test(self):
         self.__make_train_cache()
