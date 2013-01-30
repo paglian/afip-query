@@ -2,6 +2,7 @@
 
 from nltk import wordpunct_tokenize
 from nltk.metrics.distance import edit_distance
+from nltk.probability import FreqDist
 
 
 class SpellChecker:
@@ -12,25 +13,35 @@ class SpellChecker:
         self.tokenize = wordpunct_tokenize
 
         words = [w.lower() for w in self.tokenize(corpus) if w.isalnum()]
-        self.lexicon = frozenset(words)
+
+        self.wcount = len(words)
+        self.fdist = FreqDist(w.lower() for w in words)
 
     def get_candidates(self, word, D=1):
         """If word is in lexicon returns [(word, 1.0)].
         Otherwise returns a list with all the words in lexicon that has
-        a distance equal to 1. If there is no such word, returns [(word, 0.0)]
-        D is the max Levenshtein edit-distance
+        a distance equal or less than to D (D is the Levenshtein edit-distance)
+        If there is no such word, returns [(word, 0.0)]
         """
-        if word in self.lexicon:
+        word = word.lower()
+
+        if word in self.fdist:
             return [(word, 1.0)]
 
-        candidates = [c for c in self.lexicon if edit_distance(c, word) == D]
+        candidates = []
+        counts = []
+        for w, c in self.fdist.iteritems():
+            if edit_distance(w, word) <= D:
+                candidates.append(w)
+                counts.append(c)
 
-        l = len(candidates)
+        if len(candidates) == 0:
+            candidates.append(word)
+            counts.append(0)
 
-        if l == 0:
-            return [(word, 0.0)]
+        probs = [float(c) / self.wcount for c in counts]
 
-        return zip(candidates, [1.0 / l] * l)
+        return sorted(zip(candidates, probs), key=lambda x: x[1], reverse=True)
 
     def correct_word(self, word):
         """This is a short-hand for check(word)[0][0]"""
