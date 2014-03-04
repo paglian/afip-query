@@ -1,9 +1,9 @@
-So far, this project only contains one proof of concept (POC) at
+A proof of concept (POC) of an artificial neural network to make natural 
+queries to the AFIP database (http://www.afip.gov.ar/)
 
-./paglian_poc_1
-
-The POC consists of a back-end that implements an artificial neural network
-and a very simple front-end running on top of Django
+The POC consists of a back-end that implements the artificial neural network 
+and a very simple web front-end to write the queries. The project is written
+in Python.
 
 To run the POC see ./paglian_poc_1/README
 
